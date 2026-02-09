@@ -1,8 +1,8 @@
-# OpenClaw V2.1 - Elite Swarm Architecture
+# OpenClaw V2.3 - Zero-Knowledge Proof Agentic Orchestration
 
-> **Pi** 🐺 - Self-evolving, hardware-aware, swarm-ready agent.
+> **Pi** 🐺 - Self-evolving, hardware-aware, swarm-ready, cryptographically verified agent.
 
-The Elite V2.1 self-aware memory template for OpenClaw agents. Shift from chatbot to proactive, multi-agent intelligence.
+The Elite V2.3 self-aware memory template for OpenClaw agents. Shift from chatbot to proactive, multi-agent, **cryptographically verified** intelligence.
 
 ## Quick Start
 
@@ -20,16 +20,23 @@ docker-compose -f docker-compose.postgres.yml up -d
 
 # 4. Start QMD sidecar for ultra-fast search (optional, recommended)
 docker-compose -f docker-compose.qmd.yml up -d
+
+# 5. Run ZKP test suite (optional, recommended)
+bash scripts/zkp-test.sh
 ```
 
-## V2.1 Elite Features
+## V2.3 Elite Features
 
 | Feature | Description |
 |---------|-------------|
+| **Zero-Knowledge Proofs** | Cryptographic task verification without revealing private data |
+| **Proof-Based Reputation** | Reputation based on mathematically verified proofs |
+| **Fast Verification** | ~10-50ms proof verification (constant-time) |
+| **Privacy-Preserving** | Proofs reveal minimal information (hashes only) |
 | **GEPA Integration** | Self-correcting mutation engine on failures |
 | **PostgreSQL Sidecar** | Docker Compose setup for structured data |
 | **QMD Sidecar** | Hybrid BM25+Vector search for ultra-fast retrieval |
-| **Swarm Protocol** | Multi-agent coordination and handoff system |
+| **Swarm Protocol** | Multi-agent coordination and proof-based handoffs |
 | **Dual-Core Memory** | PostgreSQL (structured) + QMD (semantic) + Markdown (truth) |
 | **Hardware-Aware** | Thermal monitoring and adaptive compute scaling |
 | **Genetic Versioning** | Git-tagged mutations for easy rollback |
@@ -106,6 +113,30 @@ docker exec openclaw-postgres pg_isready -U openclaw -d openclaw_elite
 # Default pgadmin: admin@openclaw.local / admin_change_me
 ```
 
+## ZKP Setup (Optional, Advanced)
+
+```bash
+# Install ZKP dependencies
+npm install circomlibjs snarkjs
+npm install -g circom
+
+# Compile circuits (one-time)
+cd .openclaw/zkp/circuits
+npx circom task-proof.circom
+
+# Generate trusted setup (one-time)
+snarkjs groth16 setup task-proof.r1cs pot11.ptau task-proof.zkey
+snarkjs zkey contribute task-proof.zkey task-proof_final.zkey
+snarkjs zkey export verificationkey task-proof_final.zkey task-proof.vkey
+
+# Run test suite
+cd ../../../
+bash scripts/zkp-test.sh
+
+# Generate a proof (example)
+node .openclaw/zkp/agent.ts generate "pi-agent" "task-001" '{"papers":20}' '{"valid":true}'
+```
+
 ## Maintenance Scripts
 
 ```bash
@@ -131,6 +162,9 @@ bash scripts/prune-notes.sh
 # Run GEPA system validation
 bash scripts/gepa-test.sh
 
+# Run ZKP test suite (cryptographic verification)
+bash scripts/zkp-test.sh
+
 # Run stability test (50 simulated tasks with thermal monitoring)
 bash scripts/stability-test.sh
 
@@ -138,7 +172,7 @@ bash scripts/stability-test.sh
 bash scripts/stability-test.sh 100 2  # 100 tasks, 2s delay
 ```
 
-The stability test proves Pi's thermal-awareness logic holds up under pressure before community deployment.
+The stability test proves Pi's thermal-awareness logic holds up under pressure. The ZKP test suite validates cryptographic proof generation and verification.
 
 ## Cross-Agent Knowledge Transfer 🧬
 
@@ -203,4 +237,4 @@ bash scripts/swarm-encrypt.sh decrypt knowledge-pi-*.tar.gz.enc
 
 ---
 
-**Version**: 2.1 Elite | **Status**: Production Ready | **Last Updated**: 2026-02-09
+**Version**: 2.3 Zero-Knowledge Proof | **Status**: Production Ready | **Last Updated**: 2026-02-09

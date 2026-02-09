@@ -145,11 +145,11 @@ PII_REDACTIONS=0
 echo -e "${CYAN}🛡️ Scrubbing PII from extracted files...${NC}"
 echo ""
 
-find "$TEMP_DIR/extract" -type f | while read file; do
+while IFS= read -r -d '' file; do
     TOTAL_FILES=$((TOTAL_FILES + 1))
 
     # Check if file should be removed
-    local filename=$(basename "$file")
+    filename=$(basename "$file")
 
     for pattern in "${SENSITIVE_FILE_PATTERNS[@]}"; do
         if [[ "$filename" == $pattern ]]; then
@@ -161,28 +161,28 @@ find "$TEMP_DIR/extract" -type f | while read file; do
     done
 
     # Scrub content
-    local file_ext="${filename##*.}"
+    file_ext="${filename##*.}"
 
     # Only scrub text/markdown files
     if [[ "$file_ext" =~ ^(md|txt|json|yaml|yml)$ ]]; then
         echo -e "${YELLOW}   🔍 Scrubbing: ${BLUE}$filename${NC}"
 
-        local temp_file="$TEMP_DIR/scrub-temp.txt"
-        local original_content=$(cat "$file")
+        temp_file="$TEMP_DIR/scrub-temp.txt"
+        original_content=$(cat "$file")
 
         # Apply PII patterns
-        local scrubbed_content="$original_content"
-        local file_redactions=0
+        scrubbed_content="$original_content"
+        file_redactions=0
 
         for pattern in "${PII_PATTERNS[@]}"; do
             # Count matches before
-            local before_count=$(echo "$scrubbed_content" | grep -oP "$pattern" | wc -l)
+            before_count=$(echo "$scrubbed_content" | grep -oP "$pattern" | wc -l)
 
             # Apply pattern
             scrubbed_content=$(echo "$scrubbed_content" | sed -E "$pattern")
 
             # Count matches after
-            local after_count=$(echo "$scrubbed_content" | grep -oP "$pattern" | wc -l)
+            after_count=$(echo "$scrubbed_content" | grep -oP "$pattern" | wc -l)
 
             file_redactions=$((file_redactions + before_count))
         done
@@ -192,14 +192,14 @@ find "$TEMP_DIR/extract" -type f | while read file; do
 
         # Move to clean directory if changed
         if [ "$original_content" != "$scrubbed_content" ]; then
-            local relative_path="${file#$TEMP_DIR/extract/}"
+            relative_path="${file#$TEMP_DIR/extract/}"
             mkdir -p "$(dirname "$TEMP_DIR/clean/$relative_path")"
             cp "$temp_file" "$TEMP_DIR/clean/$relative_path"
             echo -e "${GREEN}   ✅ Redacted ${file_redactions} PII instances${NC}"
             SCRUBBED_FILES=$((SCRUBBED_FILES + 1))
             PII_REDACTIONS=$((PII_REDACTIONS + file_redactions))
         else
-            local relative_path="${file#$TEMP_DIR/extract/}"
+            relative_path="${file#$TEMP_DIR/extract/}"
             mkdir -p "$(dirname "$TEMP_DIR/clean/$relative_path")"
             cp "$file" "$TEMP_DIR/clean/$relative_path"
         fi
@@ -207,11 +207,11 @@ find "$TEMP_DIR/extract" -type f | while read file; do
         rm -f "$temp_file"
     else
         # Copy non-text files as-is
-        local relative_path="${file#$TEMP_DIR/extract/}"
+        relative_path="${file#$TEMP_DIR/extract/}"
         mkdir -p "$(dirname "$TEMP_DIR/clean/$relative_path")"
         cp "$file" "$TEMP_DIR/clean/$relative_path"
     fi
-done
+done < <(find "$TEMP_DIR/extract" -type f -print0)
 
 echo ""
 echo -e "${CYAN}📦 Repackaging Clean Knowledge Package...${NC}"

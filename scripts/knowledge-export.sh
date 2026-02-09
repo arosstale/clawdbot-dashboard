@@ -16,6 +16,9 @@ EXPORT_DIR=".openclaw/knowledge-transfer"
 EXPORT_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 EXPORT_FILE="knowledge-pi-${EXPORT_TIMESTAMP}.tar.gz"
 
+# Ensure export directory exists
+mkdir -p "$EXPORT_DIR"
+
 echo ""
 echo "╔════════════════════════════════════════════════════════════════╗"
 echo "║                                                                ║"
@@ -140,12 +143,11 @@ echo -e "${GREEN}✅${NC} Knowledge Manifest (MANIFEST.json)"
 # 8. Package everything
 echo ""
 echo -e "${CYAN}📦 Packaging Knowledge Transfer Bundle...${NC}"
-cd "$EXPORT_DIR/temp"
-tar -czf "../${EXPORT_FILE}" *
-cd - > /dev/null
+cd "$EXPORT_DIR/temp" || exit 1
+tar -czf "../${EXPORT_FILE}" * 2>/dev/null
+cd "$EXPORT_DIR" || exit 1
 
 rm -rf temp
-mv "$EXPORT_FILE" "$EXPORT_FILE"
 
 # Calculate file size
 FILE_SIZE=$(du -h "$EXPORT_DIR/$EXPORT_FILE" | cut -f1)
