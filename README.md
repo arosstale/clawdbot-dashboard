@@ -125,6 +125,21 @@ bash scripts/thermal-check.sh
 bash scripts/prune-notes.sh
 ```
 
+## Stability & Testing
+
+```bash
+# Run GEPA system validation
+bash scripts/gepa-test.sh
+
+# Run stability test (50 simulated tasks with thermal monitoring)
+bash scripts/stability-test.sh
+
+# Run stability test with custom parameters
+bash scripts/stability-test.sh 100 2  # 100 tasks, 2s delay
+```
+
+The stability test proves Pi's thermal-awareness logic holds up under pressure before community deployment.
+
 ## Support
 
 - **Community**: https://discord.com/invite/clawd

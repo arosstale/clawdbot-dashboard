@@ -470,6 +470,51 @@ The V2.1 Elite repository is the definitive blueprint for self-evolving agent sw
 
 ---
 
+## 🧪 Stability & Testing Scripts (Community Release)
+
+To prove the "Gold Master" production readiness, two comprehensive test scripts are included:
+
+### GEPA System Test (`scripts/gepa-test.sh`)
+Validates the entire GEPA mutation engine:
+
+- [ ] evolve.ts exists and is properly structured
+- [ ] Genetic versioning script is executable
+- [ ] MUTATION_LOG template is available
+- [ ] Thermal monitoring script works
+- [ ] AGENTS.md has V2.1 memory architecture
+- [ ] Git repository is initialized
+- [ ] PostgreSQL sidecar is configured
+- [ ] QMD sidecar is configured (optional)
+
+```bash
+bash scripts/gepa-test.sh
+```
+
+### Stability Test (`scripts/stability-test.sh`)
+Simulates 50 Google Workspace tasks to prove thermal-awareness logic:
+
+- **Thermal Monitoring**: Real-time Pi temperature tracking
+- **Adaptive Compute**: Auto-switches to low-compute at 68°C
+- **Critical Abort**: Stops immediately at 72°C
+- **Task Simulation**: 50 realistic agent tasks
+- **GEPA Triggers**: Simulates failures and mutations
+- **Performance Metrics**: Success rate, thermal events, mutations
+
+```bash
+# Default: 50 tasks, 1s delay
+bash scripts/stability-test.sh
+
+# Custom: 100 tasks, 2s delay
+bash scripts/stability-test.sh 100 2
+```
+
+**Test Results Interpretation**:
+- **≥90% Success Rate**: EXCELLENT - Production ready 🏆
+- **≥70% Success Rate**: GOOD - Acceptable for production
+- **<70% Success Rate**: NEEDS IMPROVEMENT - Not production ready
+
+---
+
 ## V2.0 Legacy Notes
 
 For historical context, V2.0 introduced:
