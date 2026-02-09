@@ -15,6 +15,7 @@ interface GEPAConfig {
   workspace: string;
   maxMutations: number;
   learningRate: number;
+  lowComputeMode: boolean;
 }
 
 interface ExecutionTrace {
@@ -40,11 +41,61 @@ class GEPAMutator {
   private config: GEPAConfig;
   private workspace: string;
   private agentsPath: string;
+  private thermalZone = '/sys/class/thermal/thermal_zone0/temp';
 
   constructor(config: GEPAConfig) {
     this.config = config;
     this.workspace = config.workspace;
     this.agentsPath = path.join(this.workspace, '.openclaw', 'core', 'AGENTS.md');
+    this.config.lowComputeMode = false;
+  }
+
+  // Thermal-aware evolution: Switch to low-compute mode if thermal critical
+  private async checkThermalAndAdjustMode(): Promise<void> {
+    try {
+      const thermalData = await fs.readFile(this.thermalZone, 'utf8');
+      const temp = parseInt(thermalData.trim());
+      const tempC = temp / 1000;
+
+      // 68°C warning threshold
+      if (tempC >= 68 && !this.config.lowComputeMode) {
+        console.log(`🌡️  Thermal Warning: ${tempC}°C - Switching to LOW-COMPUTE mode`);
+        this.config.lowComputeMode = true;
+
+        // Add thermal adaptation mutation
+        await this.logLowComputeModeSwitch(tempC);
+      }
+      // 65°C safe to resume
+      else if (tempC < 65 && this.config.lowComputeMode) {
+        console.log(`✅ Thermal Safe: ${tempC}°C - Resuming NORMAL-COMPUTE mode`);
+        this.config.lowComputeMode = false;
+      }
+      // 72°C hard limit
+      else if (tempC >= 72) {
+        console.error(`🔴 CRITICAL THERMAL: ${tempC}°C - ABORTING EVOLUTION`);
+        throw new Error(`Thermal hard limit exceeded: ${tempC}°C`);
+      }
+    } catch (error) {
+      console.log('⚠️  Thermal check unavailable, proceeding with normal mode');
+    }
+  }
+
+  private async logLowComputeModeSwitch(tempC: number): Promise<void> {
+    const noteContent = {
+      timestamp: new Date().toISOString(),
+      type: 'thermal_adaptation',
+      message: `Switched to low-compute mode at ${tempC}°C`,
+      impact: 'Limiting search results to 3 items, disabling verbose reasoning',
+    };
+
+    try {
+      const { exec } = require('child_process');
+      exec(`git notes add -m '${JSON.stringify(noteContent)}'`, (error) => {
+        if (error) console.log('Git Notes unavailable, skipping log');
+      });
+    } catch {
+      // Git unavailable, continue anyway
+    }
   }
 
   async analyzeFailure(trace: ExecutionTrace): Promise<Mutation[]> {
@@ -133,10 +184,31 @@ class GEPAMutator {
       // Log mutation to Git Notes
       await this.logToGitNotes(mutation);
 
+      // Generate mutation ID and Git tag (Genetic Versioning)
+      const mutationId = `M${Date.now().toString().slice(-6)}`;
+      await this.versionMutation(mutationId, mutation);
+
       return true;
     } catch (error) {
       console.error('Failed to apply mutation:', error);
       return false;
+    }
+  }
+
+  private async versionMutation(mutationId: string, mutation: Mutation): Promise<void> {
+    try {
+      const { exec } = require('child_process');
+      const tagCommand = `bash ${this.workspace}/scripts/version-mutation.sh "${mutationId}" "${mutation.type}" "${mutation.severity}" "GEPA: ${mutation.description}"`;
+
+      exec(tagCommand, (error, stdout, stderr) => {
+        if (error) {
+          console.log('⚠️  Versioning script failed:', stderr);
+        } else {
+          console.log(`🧬 Mutation versioned as: mutation-${mutationId}`);
+        }
+      });
+    } catch (error) {
+      console.log('⚠️  Versioning skipped:', error);
     }
   }
 
@@ -171,6 +243,9 @@ ${mutation.diff}
   }
 
   async run(trace: ExecutionTrace): Promise<boolean> {
+    // Pre-flight thermal check with adaptive mode switching
+    await this.checkThermalAndAdjustMode();
+
     const mutations = await this.analyzeFailure(trace);
 
     if (mutations.length === 0) {

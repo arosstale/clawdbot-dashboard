@@ -24,9 +24,36 @@
 ### Current Generation
 
 **Generation**: #  
-**Created**: 2026-02-03  
+**Created**: 2026-02-09  
 **Fitness Score**: N/A  
-**Status**: 🟢 Evolving
+**Technical IQ**: 3.0 (baseline)  
+**Latest Mutation**: None yet
+**Current Git Tag**: main
+
+### Mutation Tracking (Genetic Versioning)
+
+Each GEPA mutation is automatically Git-tagged for easy rollback:
+
+```bash
+# View all mutation tags
+git tag -l "mutation-*"
+
+# Checkout specific mutation (rollback)
+git checkout mutation-M001
+
+# Create branch from old mutation
+git checkout -b rollback-from-M001 mutation-M001
+```
+
+**Technical IQ Scoring**:
+- `+0.1`: Minor improvement (e.g., small prompt tweak)
+- `+0.5`: Moderate improvement (e.g., new workflow step)
+- `+1.0`: Major breakthrough (e.g., GEPA self-correction enabled)
+- `+2.0`: Paradigm shift (e.g., swarm integration)
+- `-0.5`: Regression (mutation caused issues)
+- `-1.0`: Major regression (hallucination spike)
+
+### Evolution History
 
 ---
 
