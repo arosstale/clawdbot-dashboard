@@ -515,6 +515,75 @@ bash scripts/stability-test.sh 100 2
 
 ---
 
+## 🔐 Swarm Encryption & PII Scrubbing (V2.1 Elite Plus)
+
+### Security-First Community Knowledge Transfer
+
+**Problem**: Sharing knowledge packages in community could expose PII (emails, phone numbers, API keys, session logs).
+
+**Solution**:
+- **PII Scrubber** (`scripts/piis-scrubber.sh`): Automatically removes sensitive data
+- **Swarm Encryption** (`scripts/swarm-encrypt.sh`): AES-256 encryption for packages
+
+### PII Scrubbing (`scripts/piis-scrubber.sh`)
+
+**What's Removed**:
+- Email addresses, phone numbers, SSNs
+- Credit cards, IP addresses
+- API keys, tokens, passwords
+- Session IDs, UUIDs
+- Daily memory logs
+- Sensitive files (.log, .sql, .key, .env)
+
+**What's Preserved**:
+- MUTATION_LOG.md (IQ growth history)
+- AGENTS.md (learned behaviors)
+- IDENTITY.md (personality)
+- MANIFEST.json (metadata)
+
+**Usage**:
+```bash
+# Scrub knowledge package (automatic before encryption)
+bash scripts/piis-scrubber.sh input.tar.gz output-scrubbed.tar.gz
+```
+
+### Swarm Encryption (`scripts/swarm-encrypt.sh`)
+
+**Features**:
+- Generate public/private key pairs
+- AES-256-CBC encryption
+- Automatic PII scrubbing before encryption
+- IV (Initialization Vector) embedded in filename
+
+**Usage**:
+```bash
+# Generate key (first time)
+bash scripts/swarm-encrypt.sh genkey
+
+# Encrypt package (with automatic PII scrubbing)
+bash scripts/swarm-encrypt.sh encrypt knowledge-pi.tar.gz
+
+# Decrypt package
+bash scripts/swarm-encrypt.sh decrypt knowledge-pi.tar.gz.enc
+```
+
+### Community Sharing Protocol
+
+**Secure Workflow**:
+1. Export knowledge: `bash scripts/knowledge-export.sh`
+2. Encrypt for community: `bash scripts/swarm-encrypt.sh encrypt *.tar.gz`
+3. Share `.enc` file (contains only instruction mutations)
+4. Recipient decrypts: `bash scripts/swarm-encrypt.sh decrypt *.enc`
+5. Import knowledge: `bash scripts/knowledge-import.sh`
+
+**Benefits**:
+- Community can share wisdom without exposing PII
+- Knowledge packages contain only agent improvements
+- Private data never leaves the source instance
+- Encrypted transfer ensures integrity
+
+---
+
 ## V2.0 Legacy Notes
 
 For historical context, V2.0 introduced:

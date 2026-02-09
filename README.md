@@ -140,6 +140,61 @@ bash scripts/stability-test.sh 100 2  # 100 tasks, 2s delay
 
 The stability test proves Pi's thermal-awareness logic holds up under pressure before community deployment.
 
+## Cross-Agent Knowledge Transfer 🧬
+
+Enable Pi instances to "teach" fresh agent instances what they've learned:
+
+```bash
+# Export knowledge from source Pi (teacher)
+bash scripts/knowledge-export.sh
+# Output: .openclaw/knowledge-transfer/knowledge-pi-20260209.tar.gz
+
+# Import knowledge to target Pi (student)
+bash scripts/knowledge-import.sh knowledge-pi-20260209.tar.gz
+
+# Merge with existing knowledge
+bash scripts/knowledge-import.sh knowledge-pi-20260209.tar.gz --merge
+```
+
+**Transfered Knowledge**:
+- IQ growth history (MUTATION_LOG.md)
+- Learned behaviors (AGENTS.md)
+- Personality profile (IDENTITY.md)
+- GEPA mutation history (20 most recent)
+- Agent reflections (Git Notes)
+- Thermal energy patterns
+
+See [docs/KNOWLEDGE_TRANSFER.md](docs/KNOWLEDGE_TRANSFER.md) for detailed documentation.
+
+## 🔐 Swarm Encryption (Secure Community Transfer)
+
+For secure knowledge sharing in the community:
+
+```bash
+# Generate encryption key (first time only)
+bash scripts/swarm-encrypt.sh genkey
+
+# Encrypt knowledge package (with automatic PII removal)
+bash scripts/swarm-encrypt.sh encrypt .openclaw/knowledge-transfer/knowledge-pi-*.tar.gz
+
+# Decrypt received package
+bash scripts/swarm-encrypt.sh decrypt knowledge-pi-*.tar.gz.enc
+```
+
+**Security Features**:
+- **PII Scrubbing**: Automatically removes emails, phones, SSNs, API keys, session IDs
+- **AES-256 Encryption**: Military-grade encryption for knowledge packages
+- **Safe Sharing**: Only instruction mutations and energy patterns shared
+- **Private Data**: Session logs, .env files, sensitive files automatically removed
+
+**What's Removed Before Encryption**:
+- Email addresses, phone numbers, SSNs
+- Credit cards, IP addresses
+- API keys, tokens, passwords
+- Session IDs, UUIDs
+- Daily memory logs
+- Sensitive files (.log, .sql, .key, .env)
+
 ## Support
 
 - **Community**: https://discord.com/invite/clawd
