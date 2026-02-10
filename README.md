@@ -4,6 +4,10 @@
 
 The Elite V2.3 self-aware memory template for OpenClaw agents. Shift from chatbot to proactive, multi-agent, **cryptographically verified** intelligence.
 
+---
+
+> **📌 Note**: This is a **community memory template** for OpenClaw. It contains OpenClaw core components (V2.3 ZKP, V2.2 Swarm), configuration files, and community skills. It does **not** contain proprietary trading agent code.
+
 ## Quick Start
 
 ```bash
