@@ -8,6 +8,9 @@ with emoji prioritization and multi-date temporal tracking.
 Inspired by Mastra: https://mastra.ai/blog/observational-memory
 """
 
+import sqlite3
+from pathlib import Path
+from datetime import datetime
 from .observer_agent import ObserverAgent
 from .reflector_agent import ReflectorAgent
 from .token_counter import TokenCounter
@@ -18,6 +21,7 @@ from .types import (
     PriorityLevel,
 )
 from typing import Dict, List, Optional, Tuple
+import json
 
 
 class ObservationalMemory:
@@ -32,18 +36,105 @@ class ObservationalMemory:
 
     def __init__(self, config: Optional[ObservationConfig] = None):
         """Initialize Observational Memory system."""
-        from .config import default_config
+        from .types import default_config
 
         self.config = config or default_config()
         self.token_counter = TokenCounter()
         self.observer = ObserverAgent(self.config)
         self.reflector = ReflectorAgent(self.config)
 
+        # Initialize SQLite storage
+        self._init_database()
+
     def get_observation_record(self, thread_id: str) -> Optional[ObservationalMemoryRecord]:
-        """Get memory record for a thread."""
-        # This would integrate with storage
-        # For now, return empty record
-        return None
+        """Get memory record for a thread from SQLite database."""
+        db_path = Path(self.config.db_path)
+        if not db_path.exists():
+            return None
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Get memory record
+        cursor.execute("""
+            SELECT current_task, suggested_response, last_observed_at
+            FROM memory_records
+            WHERE thread_id = ?
+        """, (thread_id,))
+        record_data = cursor.fetchone()
+
+        if not record_data:
+            conn.close()
+            return None
+
+        # Get observations
+        cursor.execute("""
+            SELECT timestamp, priority, content, referenced_date
+            FROM observations
+            WHERE thread_id = ?
+            ORDER BY created_at ASC
+        """, (thread_id,))
+        obs_data = cursor.fetchall()
+
+        conn.close()
+
+        # Build observations list
+        observations = []
+        for row in obs_data:
+            obs = Observation(
+                timestamp=datetime.fromisoformat(row[0]),
+                priority=row[1],
+                content=row[2],
+                referenced_date=datetime.fromisoformat(row[3]) if row[3] else None
+            )
+            observations.append(obs)
+
+        return ObservationalMemoryRecord(
+            observations=observations,
+            current_task=record_data[0] or "",
+            suggested_response=record_data[1] or "",
+            last_observed_at=datetime.fromisoformat(record_data[2]) if record_data[2] else None
+        )
+
+    def _save_observation_record(self, thread_id: str, record: ObservationalMemoryRecord):
+        """Save memory record to SQLite database."""
+        db_path = Path(self.config.db_path)
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Update memory record
+        cursor.execute("""
+            INSERT OR REPLACE INTO memory_records
+            (thread_id, current_task, suggested_response, last_observed_at, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            thread_id,
+            record.current_task,
+            record.suggested_response,
+            record.last_observed_at.isoformat() if record.last_observed_at else None
+        ))
+
+        # Clear old observations for this thread (they're being replaced)
+        cursor.execute("""
+            DELETE FROM observations WHERE thread_id = ?
+        """, (thread_id,))
+
+        # Insert observations
+        for obs in record.observations:
+            cursor.execute("""
+                INSERT INTO observations
+                (thread_id, timestamp, priority, content, referenced_date)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                thread_id,
+                obs.timestamp.isoformat(),
+                obs.priority,
+                obs.content,
+                obs.referenced_date.isoformat() if obs.referenced_date else None
+            ))
+
+        conn.commit()
+        conn.close()
 
     def process_messages(
         self,
@@ -88,6 +179,10 @@ class ObservationalMemory:
         record.observations = combined
         record.current_task = current_task or record.current_task
         record.suggested_response = suggested or record.suggested_response
+        record.last_observed_at = datetime.now()
+
+        # Save to database
+        self._save_observation_record(thread_id, record)
 
         return record
 
@@ -136,7 +231,7 @@ class ObservationalMemory:
             lines.append(f"Date: {date_key}")
             for obs in grouped[date_key]:
                 time_str = obs.timestamp.strftime("%H:%M")
-                emoji = obs.priority.value
+                emoji = obs.priority  # Now a string: "🔴", "🟡", "🟢"
                 lines.append(f"* {emoji} ({time_str}) {obs.content}")
 
         return "\n".join(lines)
@@ -164,7 +259,7 @@ class ObservationalMemory:
 
         # Update record
         record.observations = reflected
-        return f"✅ Reflection complete. {len(recorded.observations)} observations"
+        return f"✅ Reflection complete. {len(record.observations)} observations"
 
 
 # Export for easy importing

@@ -65,14 +65,14 @@ Your output MUST use structured format:
         # Group by priority - keep only high and medium
         condensed = [
             obs for obs in observations
-            if obs.priority in [PriorityLevel.RED, PriorityLevel.YELLOW]
+            if obs.priority in [PriorityLevel.RED, PriorityLevel.YELLOW]  # "🔴", "🟡"
         ]
 
         # Add summary observation
         if condensed:
             summary = Observation(
                 timestamp=observations[0].timestamp if observations else datetime.now(),
-                priority=PriorityLevel.RED,
+                priority=PriorityLevel.RED,  # "🔴"
                 content=f"Memory consolidated: {len(condensed)} key observations preserved"
             )
             condensed.append(summary)

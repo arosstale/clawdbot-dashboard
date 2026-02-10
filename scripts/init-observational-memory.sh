@@ -8,6 +8,7 @@ This script creates the SQLite database and default configuration.
 import sys
 import os
 from pathlib import Path
+import sqlite3
 
 # Paths
 OPENCLAW_DIR = Path(".openclaw")

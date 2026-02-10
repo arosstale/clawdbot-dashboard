@@ -98,14 +98,14 @@ Group observations by date, then list each with 24-hour time.
                 if "kids" in content.lower() or "children" in content.lower():
                     obs = Observation(
                         timestamp=timestamp,
-                        priority=PriorityLevel.RED,
+                        priority=PriorityLevel.RED,  # "🔴"
                         content="User mentioned family (children)"
                     )
                     observations.append(obs)
                 elif "work" in content.lower() or "job" in content.lower():
                     obs = Observation(
                         timestamp=timestamp,
-                        priority=PriorityLevel.YELLOW,
+                        priority=PriorityLevel.YELLOW,  # "🟡"
                         content="User discussed work situation"
                     )
                     observations.append(obs)

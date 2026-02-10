@@ -3,10 +3,10 @@ Configuration for OpenClaw Observational Memory.
 """
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Optional
+from datetime import datetime
 
 
-@dataclass
 class PriorityLevel:
     """Priority levels for observations."""
     RED = "🔴"
@@ -17,19 +17,19 @@ class PriorityLevel:
 @dataclass
 class Observation:
     """A single observation with temporal context."""
-    timestamp: "datetime"
-    priority: PriorityLevel
+    timestamp: datetime
+    priority: str  # PriorityLevel.RED, YELLOW, or GREEN
     content: str
-    referenced_date: "Optional[datetime]" = None  # Estimated/actual referenced date
+    referenced_date: Optional[datetime] = None  # Estimated/actual referenced date
 
 
 @dataclass
 class ObservationalMemoryRecord:
     """Complete observational memory for a thread."""
-    observations: "list[Observation]"
+    observations: list[Observation]
     current_task: str = ""
     suggested_response: str = ""
-    last_observed_at: "Optional[datetime]" = None
+    last_observed_at: Optional[datetime] = None
 
 
 @dataclass
