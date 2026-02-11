@@ -82,29 +82,31 @@ analyze_storage_bloat() {
     echo -e "${BLUE}💾 Subconscious Bloat Analysis${NC}" | tee -a "$HEALTH_LOG"
     echo "------------------------------" | tee -a "$HEALTH_LOG"
     
-    # Git folder size
-    local git_size=$(du -sk "$WORKSPACE/.git" 2>/dev/null || echo "0")
-    local git_size_mb=$(echo "scale=2; $git_size / 1048576" | bc 2>/dev/null || echo "0")
+    # Git folder size (KB)
+    local git_size=$(du -sk "$WORKSPACE/.git" 2>/dev/null | cut -f1 || echo "0")
+    local git_size_mb=$(echo "scale=2; $git_size / 1024" | bc 2>/dev/null || echo "0")
     
-    # Memory folder size
-    local mem_size=$(du -sk "$MEMORY_DIR" 2>/dev/null || echo "0")
-    local mem_size_mb=$(echo "scale=2; $mem_size / 1048576" | bc 2>/dev/null || echo "0")
+    # Memory folder size (KB)
+    local mem_size=$(du -sk "$MEMORY_DIR" 2>/dev/null | cut -f1 || echo "0")
+    local mem_size_mb=$(echo "scale=2; $mem_size / 1024" | bc 2>/dev/null || echo "0")
     
-    # SQLite databases
-    local db_size=$(find "$WORKSPACE" -name "*.db" -exec du -ch {} + 2>/dev/null | tail -1 || echo "0")
-    local db_size_mb=$(echo "scale=2; $db_size / 1048576" | bc 2>/dev/null || echo "N/A")
+    # SQLite databases (KB)
+    local db_size=$(find "$WORKSPACE" -name "*.db" -exec du -ck {} + 2>/dev/null | tail -1 | cut -f1 || echo "0")
+    local db_size_mb=$(echo "scale=2; $db_size / 1024" | bc 2>/dev/null || echo "0")
     
     echo "Git (.git): ${git_size_mb} MB" | tee -a "$HEALTH_LOG"
     echo "Memory: ${mem_size_mb} MB" | tee -a "$HEALTH_LOG"
     echo "Databases: ${db_size_mb} MB" | tee -a "$HEALTH_LOG"
-    echo "Total: ${git_size_mb} MB + ${mem_size_mb} MB + ${db_size_mb} MB = $(echo "scale=2; $git_size_mb + $mem_size_mb + $db_size_mb" | bc) MB" | tee -a "$HEALTH_LOG"
+    
+    local total_mb=$(echo "scale=2; $git_size_mb + $mem_size_mb + $db_size_mb" | bc)
+    echo "Total: $total_mb MB" | tee -a "$HEALTH_LOG"
     
     # Bloat assessment
-    if [ ! -z "$git_size_mb" ] && [ "$(echo "$git_size_mb > 500" | bc)" = "1" ]; then
+    if [ "$(echo "$git_size_mb > 500" | bc)" = "1" ]; then
         echo -e "${RED}🚨 HIGH RISK: Git folder is bloated${NC}" | tee -a "$HEALTH_LOG"
         echo "   ⚠️  Over 500MB - sync times will be slow" | tee -a "$HEALTH_LOG"
         echo "   Recommendation: Run aggressive git gc" | tee -a "$HEALTH_LOG"
-    elif [ ! -z "$git_size_mb" ] && [ "$(echo "$git_size_mb > 200" | bc)" = "1" ]; then
+    elif [ "$(echo "$git_size_mb > 200" | bc)" = "1" ]; then
         echo -e "${YELLOW}⚠️  MEDIUM RISK: Git folder growing${NC}" | tee -a "$HEALTH_LOG"
         echo "   Recommendation: Monitor growth rate" | tee -a "$HEALTH_LOG"
     else
@@ -258,7 +260,7 @@ assess_intelligence_growth() {
     
     # Compare memory growth vs. learning growth
     local current_memory_files=$(find "$MEMORY_DIR" -name "*.md" -type f | wc -l)
-    local current_mem_size=$(du -sh "$MEMORY_DIR" 2>/dev/null || echo "0")
+    local current_mem_size=$(du -sk "$MEMORY_DIR" 2>/dev/null | cut -f1 || echo "0")
     
     # Check for ALMA score trends (if available)
     local alma_db="$WORKSPACE/monitoring/alma_designs.db"
@@ -272,7 +274,8 @@ assess_intelligence_growth() {
     fi
     
     echo "Memory Files: $current_memory_files" | tee -a "$HEALTH_LOG"
-    echo "Memory Size: $current_mem_size" | tee -a "$HEALTH_LOG"
+    local current_mem_size_mb=$(echo "scale=2; $current_mem_size / 1024" | bc 2>/dev/null || echo "0")
+    echo "Memory Size: ${current_mem_size_mb} MB" | tee -a "$HEALTH_LOG"
     echo "ALMA Designs: $design_count" | tee -a "$HEALTH_LOG"
     echo "Avg ALMA Score: ${avg_score:-N/A}" | tee -a "$HEALTH_LOG"
     
@@ -292,11 +295,9 @@ assess_intelligence_growth() {
     fi
     
     # Heavier indicators (mem_size is in KB, convert to MB)
-    local mem_size_mb=$(echo "scale=2; $current_mem_size / 1048576" | bc 2>/dev/null || echo "0")
-    
-    if [ "$mem_size_mb" -gt 500 ]; then  # > 500MB
+    if [ "$(echo "$current_mem_size_mb > 500" | bc)" = "1" ]; then  # > 500MB
         heavier=true
-        echo -e "${YELLOW}⚠️  Memory size is large (${mem_size_mb}MB)${NC}" | tee -a "$HEALTH_LOG"
+        echo -e "${YELLOW}⚠️  Memory size is large (${current_mem_size_mb}MB)${NC}" | tee -a "$HEALTH_LOG"
     fi
     
     if [ "$current_memory_files" -gt 100 ] && [ -z "$design_count" ]; then
